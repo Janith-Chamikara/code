@@ -37,6 +37,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
   const [blockOpen, setBlockOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema) as unknown as Resolver<CreateEventFormData>,
@@ -122,8 +123,39 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
     }
   }
 
+  const hasUnsavedChanges = () => {
+    return !!file || form.formState.isDirty;
+  };
+
+  const discardChanges = () => {
+    form.reset();
+    setFile(null);
+    setMsg("");
+    setScanDecision(null);
+    setBlockOpen(false);
+    setScanning(false);
+    setConfirmDiscardOpen(false);
+    setOpen(false);
+  };
+
+  const attemptClose = () => {
+    if (hasUnsavedChanges()) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setOpen(false);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      attemptClose();
+      return; // do not close immediately; wait for user confirmation
+    }
+    setOpen(true);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+  <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? <Button>Create event</Button>}
       </DialogTrigger>
@@ -264,7 +296,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={attemptClose}>
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
@@ -273,6 +305,21 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
             </DialogFooter>
           </form>
         </Form>
+        {/* Confirm discard modal */}
+        <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                If you leave now, your changes will not be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" onClick={() => setConfirmDiscardOpen(false)}>Continue editing</Button>
+              <AlertDialogAction onClick={discardChanges}>Discard</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

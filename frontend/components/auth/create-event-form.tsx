@@ -48,10 +48,11 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
   const [blockOpen, setBlockOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     reset,
     setValue,
   } = useForm<CreateEventFormData>({
@@ -99,6 +100,37 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
     }
   };
 
+  const hasUnsavedChanges = () => {
+    return !!thumbnailFile || isDirty; // RHF dirty or a selected file
+  };
+
+  const discardChanges = () => {
+    // reset RHF form and local states
+    reset();
+    setThumbnailFile(null);
+    setScanDecision(null);
+    setBlockOpen(false);
+    setScanning(false);
+    setConfirmDiscardOpen(false);
+    setOpen(false);
+  };
+
+  const attemptClose = () => {
+    if (hasUnsavedChanges()) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setOpen(false);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      attemptClose();
+      return; // prevent closing; we'll close after confirm if needed
+    }
+    setOpen(true);
+  };
+
   // NSFW check on file select. Block -> clear file + show dialog. Allow/Review -> accept silently.
   async function onThumbnailSelected(file: File | null) {
     if (!file) {
@@ -133,7 +165,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+  <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? <Button>Create event</Button>}
       </DialogTrigger>
@@ -284,7 +316,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={attemptClose}
               className="h-12"
             >
               Cancel
@@ -308,6 +340,21 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogAction onClick={() => setBlockOpen(false)}>OK</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          {/* Confirm discard modal */}
+          <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  If you leave now, your changes will not be saved.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <Button variant="outline" onClick={() => setConfirmDiscardOpen(false)}>Continue editing</Button>
+                <AlertDialogAction onClick={discardChanges}>Discard</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
