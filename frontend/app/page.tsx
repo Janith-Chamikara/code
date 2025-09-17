@@ -26,8 +26,15 @@ import {
   BarChart3,
 } from "lucide-react";
 import { CreatePostDialog } from "@/components/auth/create-post-form";
+import { useQuery } from "@tanstack/react-query";
+import { getEvents } from "@/lib/actions";
 
 export default function HomePage() {
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ["events", "home", "top"],
+    queryFn: () => getEvents(5),
+    staleTime: 60_000,
+  });
   return (
     <main className="flex-1">
       {/* Hero */}
@@ -164,87 +171,74 @@ export default function HomePage() {
               public wall.
             </p>
           </div>
-          <Tabs defaultValue="hackathons" className="w-full">
-            <TabsList className="mx-auto grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="hackathons">Hackathons</TabsTrigger>
-              <TabsTrigger value="campus">Campus</TabsTrigger>
-              <TabsTrigger value="meetups">Meetups</TabsTrigger>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="mx-auto grid w-full max-w-md grid-cols-1 md:grid-cols-3">
+              <TabsTrigger value="all">Latest</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+              <TabsTrigger value="recent">Recent</TabsTrigger>
             </TabsList>
-            <TabsContent value="hackathons" className="mt-6">
+            <TabsContent value="all" className="mt-6">
+              {isLoading && (
+                <div className="text-center text-sm text-muted-foreground py-6">
+                  Loading events...
+                </div>
+              )}
+              {!isLoading && events.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-6">
+                  No events yet. Create one!
+                </div>
+              )}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <SharedEventCard
-                  name="CodeFest 2025"
-                  description="University-wide 24h hackathon bringing builders together."
-                  category="Hackathon"
-                  postCount={342}
-                  eventDate="2025-09-17"
-                  live
-                />
-                <SharedEventCard
-                  name="ByteJam Finals"
-                  description="Final demo day with judges and sponsors."
-                  category="Hackathon"
-                  postCount={128}
-                  eventDate="2025-10-01"
-                />
-                <SharedEventCard
-                  name="AI Sprint"
-                  description="Rapid prototyping with AI tools and models."
-                  category="Hackathon"
-                  postCount={521}
-                  eventDate="2025-11-05"
-                />
+                {events.map((ev: any) => (
+                  <SharedEventCard
+                    key={ev.id}
+                    id={ev.id}
+                    name={ev.title}
+                    description={ev.description}
+                    category={ev.category}
+                    postCount={ev.postCount ?? 0}
+                    thumbnail={ev.thumbnail}
+                    eventDate={ev.eventDate}
+                    live={new Date(ev.eventDate) >= new Date()}
+                  />
+                ))}
               </div>
             </TabsContent>
-            <TabsContent value="campus" className="mt-6">
+            <TabsContent value="upcoming" className="mt-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <SharedEventCard
-                  name="Freshers Night"
-                  description="Welcome to the new batch — music and games."
-                  category="Campus"
-                  postCount={96}
-                  eventDate="2025-09-20"
-                />
-                <SharedEventCard
-                  name="Open Day"
-                  description="Explore labs, clubs and projects."
-                  category="Campus"
-                  postCount={73}
-                  eventDate="2025-10-08"
-                />
-                <SharedEventCard
-                  name="Cultural Week"
-                  description="A celebration of diversity with food and art."
-                  category="Campus"
-                  postCount={210}
-                  eventDate="2025-12-02"
-                  live
-                />
+                {events
+                  .filter((e: any) => new Date(e.eventDate) > new Date())
+                  .map((ev: any) => (
+                    <SharedEventCard
+                      key={ev.id}
+                      id={ev.id}
+                      name={ev.title}
+                      description={ev.description}
+                      category={ev.category}
+                      postCount={ev.postCount ?? 0}
+                      thumbnail={ev.thumbnail}
+                      eventDate={ev.eventDate}
+                      live
+                    />
+                  ))}
               </div>
             </TabsContent>
-            <TabsContent value="meetups" className="mt-6">
+            <TabsContent value="recent" className="mt-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <SharedEventCard
-                  name="JS Colombo"
-                  description="Monthly meetup for JavaScript enthusiasts."
-                  category="Meetup"
-                  postCount={41}
-                  eventDate="2025-09-28"
-                />
-                <SharedEventCard
-                  name="DevOps LK"
-                  description="Sharing SRE, Platform and CI/CD learnings."
-                  category="Meetup"
-                  postCount={58}
-                  eventDate="2025-10-15"
-                />
-                <SharedEventCard
-                  name="Design Talks"
-                  description="UI/UX demos and critiques."
-                  category="Meetup"
-                  postCount={29}
-                  eventDate="2025-11-12"
-                />
+                {events
+                  .filter((e: any) => new Date(e.eventDate) <= new Date())
+                  .map((ev: any) => (
+                    <SharedEventCard
+                      key={ev.id}
+                      id={ev.id}
+                      name={ev.title}
+                      description={ev.description}
+                      category={ev.category}
+                      postCount={ev.postCount ?? 0}
+                      thumbnail={ev.thumbnail}
+                      eventDate={ev.eventDate}
+                    />
+                  ))}
               </div>
             </TabsContent>
           </Tabs>
