@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EventCard as SharedEventCard } from "@/components/event-card";
 import {
   ArrowRight,
   Bolt,
@@ -138,23 +139,23 @@ export default function HomePage() {
             </TabsList>
             <TabsContent value="hackathons" className="mt-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <EventCard title="CodeFest 2025" posts={342} live label="Live" />
-                <EventCard title="ByteJam Finals" posts={128} />
-                <EventCard title="AI Sprint" posts={521} />
+                <SharedEventCard name="CodeFest 2025" description="University-wide 24h hackathon bringing builders together." category="Hackathon" postCount={342} eventDate="2025-09-17" live />
+                <SharedEventCard name="ByteJam Finals" description="Final demo day with judges and sponsors." category="Hackathon" postCount={128} eventDate="2025-10-01" />
+                <SharedEventCard name="AI Sprint" description="Rapid prototyping with AI tools and models." category="Hackathon" postCount={521} eventDate="2025-11-05" />
               </div>
             </TabsContent>
             <TabsContent value="campus" className="mt-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <EventCard title="Freshers Night" posts={96} />
-                <EventCard title="Open Day" posts={73} />
-                <EventCard title="Cultural Week" posts={210} live />
+                <SharedEventCard name="Freshers Night" description="Welcome to the new batch — music and games." category="Campus" postCount={96} eventDate="2025-09-20" />
+                <SharedEventCard name="Open Day" description="Explore labs, clubs and projects." category="Campus" postCount={73} eventDate="2025-10-08" />
+                <SharedEventCard name="Cultural Week" description="A celebration of diversity with food and art." category="Campus" postCount={210} eventDate="2025-12-02" live />
               </div>
             </TabsContent>
             <TabsContent value="meetups" className="mt-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <EventCard title="JS Colombo" posts={41} />
-                <EventCard title="DevOps LK" posts={58} />
-                <EventCard title="Design Talks" posts={29} />
+                <SharedEventCard name="JS Colombo" description="Monthly meetup for JavaScript enthusiasts." category="Meetup" postCount={41} eventDate="2025-09-28" />
+                <SharedEventCard name="DevOps LK" description="Sharing SRE, Platform and CI/CD learnings." category="Meetup" postCount={58} eventDate="2025-10-15" />
+                <SharedEventCard name="Design Talks" description="UI/UX demos and critiques." category="Meetup" postCount={29} eventDate="2025-11-12" />
               </div>
             </TabsContent>
           </Tabs>
@@ -271,20 +272,7 @@ function FeatureCard({ icon, title, desc }: Readonly<{ icon: React.ReactNode; ti
   );
 }
 
-function EventCard({ title, posts, live, label }: Readonly<{ title: string; posts: number; live?: boolean; label?: string }>) {
-  return (
-    <Card className="h-full">
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">{title}</CardTitle>
-        <div className="flex items-center gap-2">
-          {live && <span className="relative inline-flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" /></span>}
-          <Badge variant="secondary">{label ?? (live ? "Live" : "Ready")}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">{posts.toLocaleString()} posts</CardContent>
-    </Card>
-  );
-}
+// removed legacy inline EventCard in favor of shared component
 
 function StepCard({ step, title, desc }: Readonly<{ step: string; title: string; desc: string }>) {
   return (
