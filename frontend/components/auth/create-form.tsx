@@ -18,10 +18,14 @@ import { createEventSchema, type CreateEventFormData } from "@/lib/schema";
 import { format } from "date-fns";
 import { createEvent } from "@/lib/actions";
 import { Dropzone } from "@/components/ui/dropzone";
+import { nsfwCheckFile } from "@/lib/nsfw-check";
 
 // Overlay form to create an Event using shadcn ui + Zod
 export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [msg, setMsg] = useState<string>("");
+  const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
 
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
@@ -69,6 +73,41 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
       toast.error("Something went wrong creating the event");
     }
   };
+
+  // Validate selected image using NSFW.js and update RHF field accordingly
+  async function onFileChange(f: File | null, onChange: (v: File | null) => void) {
+    if (!f) {
+      setMsg("");
+      setScanDecision(null);
+      setFile(null);
+      onChange(null);
+      return;
+    }
+    setMsg("Checking image…");
+    setScanDecision(null);
+    try {
+      const { decision } = await nsfwCheckFile(f);
+      setScanDecision(decision as any);
+      if (decision === "block") {
+        setMsg("❌ Image blocked (adult content). Choose another image.");
+        setFile(null);
+        onChange(null);
+        return;
+      }
+      if (decision === "review") {
+        setMsg("⚠️ Possibly sensitive. We’ll mark it for review.");
+      } else {
+        setMsg("✅ Looks okay.");
+      }
+      setFile(f);
+      onChange(f);
+    } catch (e) {
+      setMsg("Could not scan image. Please try another file.");
+      setScanDecision(null);
+      setFile(null);
+      onChange(null);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -134,10 +173,25 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
                       control={form.control}
                       name="thumbnailFile"
                       render={({ field: fileField }) => (
-                        <Dropzone
-                          value={fileField.value as unknown as File | null}
-                          onFileSelected={(f) => fileField.onChange(f)}
-                        />
+                        <div className="space-y-1">
+                          <Dropzone
+                            value={(fileField.value as unknown as File | null) ?? file}
+                            onFileSelected={(f) => onFileChange(f as File | null, (v) => fileField.onChange(v as any))}
+                          />
+                          {msg ? (
+                            <p
+                              className={
+                                scanDecision === "block"
+                                  ? "text-xs text-red-600"
+                                  : scanDecision === "review"
+                                  ? "text-xs text-amber-600"
+                                  : "text-xs text-muted-foreground"
+                              }
+                            >
+                              {msg}
+                            </p>
+                          ) : null}
+                        </div>
                       )}
                     />
                   </div>
