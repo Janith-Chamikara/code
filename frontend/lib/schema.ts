@@ -9,6 +9,8 @@ export const registerSchema = z
   .object({
     email: z.string().email(),
     password: z.string().min(6, "Password must be at least 6 characters"),
+    firstName: z.string().min(4, "First name need to be at least characters"),
+    lastName: z.string().optional(),
     confirmPassword: z.string().min(6, { message: "Password is too short" }),
   })
   .refine(

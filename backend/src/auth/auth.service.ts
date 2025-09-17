@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -22,7 +21,6 @@ import {
   NotificationChannel,
   NotificationType,
 } from 'src/notifications/dto/create-notification.dto';
-import { OnboardingDto } from './dto/onboarding.dto';
 
 @Injectable()
 export class AuthService {
@@ -53,7 +51,7 @@ export class AuthService {
     if (user) {
       await this.notificationsService.create({
         userId: user.id,
-        title: `Welcome to SignOra`,
+        title: `Welcome to EventBuzz`,
         message: `Thank you for signing up. Please complete the onboarding form to get started.`,
         type: NotificationType.SYSTEM_ALERT,
         channel: NotificationChannel.IN_APP,
@@ -86,20 +84,13 @@ export class AuthService {
       },
     });
 
-    const isOfficerExists = await this.prismaService.officer.findUnique({
-      where: {
-        email: email,
-      },
-    });
-
-    if (!isUserExists && !isOfficerExists) {
+    if (!isUserExists) {
       throw new BadRequestException('Invalid email.');
     }
 
-    const targetEntity = isUserExists || isOfficerExists;
     const isPasswordCorrect = await comparePassword(
       password,
-      targetEntity.password,
+      isUserExists.password,
     );
 
     if (!isPasswordCorrect) {
@@ -112,53 +103,7 @@ export class AuthService {
       return { ...result, role: 'USER' };
     }
 
-    if (isOfficerExists && isPasswordCorrect) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...result } = isOfficerExists;
-      return { ...result, role: 'OFFICER' };
-    }
-
     return null;
-  }
-
-  async completeOnboarding(userId: string, onboardingDto: OnboardingDto) {
-    const isUserExists = this.prismaService.user.findFirst({
-      where: {
-        id: userId,
-      },
-    });
-    if (!isUserExists) {
-      throw new NotFoundException('Invalid user id. Please register again');
-    }
-    const isNationalIdExists = await this.prismaService.user.findFirst({
-      where: {
-        nationalId: onboardingDto.nationalId,
-      },
-    });
-    if (isNationalIdExists) {
-      throw new ConflictException(
-        'The provided national Id number is already in use',
-      );
-    }
-    const updatedUser = await this.prismaService.user.update({
-      where: {
-        id: userId,
-      },
-      data: onboardingDto,
-    });
-    if (updatedUser) {
-      await this.notificationsService.create({
-        userId: userId,
-        title: `Completed Sign up`,
-        message: `You have successfully completed onboarding process. You can start explore our features now`,
-        type: NotificationType.SYSTEM_ALERT,
-        channel: NotificationChannel.IN_APP,
-      });
-    }
-    return {
-      updatedUser,
-      message: `You have completed your registration ${updatedUser.firstName}.`,
-    };
   }
 
   generateRefreshToken(payload: Omit<User, 'password'>) {
