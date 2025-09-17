@@ -105,10 +105,10 @@ export function SiteHeader({ showAuthButtons = true }: Readonly<SiteHeaderProps>
 function MarketingLinks() {
   return (
     <>
-      <a href="#features" className="hover:text-foreground">Features</a>
+      <Link href="#features" className="hover:text-foreground">Features</Link>
       <Link href="/events" className="hover:text-foreground">Explore</Link>
-      <a href="#how" className="hover:text-foreground">How it works</a>
-      <a href="#realtime" className="hover:text-foreground">Realtime</a>
+      <Link href="#how" className="hover:text-foreground">How it works</Link>
+      <Link href="#realtime" className="hover:text-foreground">Realtime</Link>
     </>
   );
 }
