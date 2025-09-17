@@ -40,6 +40,7 @@ export default function HomePage() {
                 for your audience. Perfect for hackathons, campus events, and meetups.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
+
                 <CreateEventDialog
                   trigger={
                     <Button size="lg" className="gap-2">
@@ -47,6 +48,7 @@ export default function HomePage() {
                     </Button>
                   }
                 />
+
                 <Link href="#events">
                   <Button size="lg" variant="outline" className="gap-2">
                     View public wall <ArrowRight className="size-5" />
@@ -231,7 +233,7 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+              <Button size="lg" variant="default" className="border-white/30 text-white hover:bg-white/10">
                 I already have an account
               </Button>
             </Link>
