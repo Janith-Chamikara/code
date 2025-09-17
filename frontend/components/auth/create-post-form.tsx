@@ -10,6 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,10 +28,15 @@ import { createPostSchema, type CreatePostFormData } from "@/lib/schema";
 import { format } from "date-fns";
 import { createPost } from "@/lib/actions";
 import { Dropzone } from "@/components/ui/dropzone";
+import { nsfwCheckFile } from "@/lib/nsfw-check";
 
 // Overlay form to create a Post using shadcn ui + Zod
 export function CreatePostDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [msg, setMsg] = useState<string>("");
+  const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
+  const [blockOpen, setBlockOpen] = useState(false);
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
 
@@ -67,6 +81,41 @@ export function CreatePostDialog({ trigger }: { trigger?: React.ReactNode }) {
     }
   };
 
+  // Validate selected image using NSFW.js and update RHF field accordingly
+  async function onFileChange(f: File | null, onChange: (v: File | null) => void) {
+    if (!f) {
+      setMsg("");
+      setScanDecision(null);
+      setFile(null);
+      onChange(null);
+      return;
+    }
+    // Only show UI if the image is blocked; otherwise keep it quiet
+    setMsg("");
+    setScanDecision(null);
+    try {
+      const { decision } = await nsfwCheckFile(f);
+      if (decision === "block") {
+        setScanDecision("block");
+        setMsg("Image blocked (adult content). Choose another image.");
+        setFile(null);
+        onChange(null);
+        setBlockOpen(true);
+        return;
+      }
+      // For allow/review: accept silently without any message or color change
+      setMsg("");
+      setScanDecision(null);
+      setFile(f);
+      onChange(f);
+    } catch (e) {
+      setMsg("Could not scan image. Please try another file.");
+      setScanDecision(null);
+      setFile(null);
+      onChange(null);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -106,10 +155,18 @@ export function CreatePostDialog({ trigger }: { trigger?: React.ReactNode }) {
                       control={form.control}
                       name="imageFile"
                       render={({ field: fileField }) => (
-                        <Dropzone
-                          value={fileField.value as unknown as File | null}
-                          onFileSelected={(f) => fileField.onChange(f)}
-                        />
+                        <div
+                          className={
+                            scanDecision === "block"
+                              ? "space-y-1 rounded-md border p-2 border-red-300 bg-red-50/60"
+                              : ""
+                          }
+                        >
+                          <Dropzone
+                            value={(fileField.value as unknown as File | null) ?? file}
+                            onFileSelected={(f) => onFileChange(f as File | null, (v) => fileField.onChange(v as any))}
+                          />
+                        </div>
                       )}
                     />
                   </div>

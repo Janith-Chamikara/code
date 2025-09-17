@@ -18,23 +18,35 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Upload } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createEventSchema, type CreateEventFormData } from "@/lib/schema";
 import { format } from "date-fns";
 import { createEvent } from "@/lib/actions";
 import { Dropzone } from "@/components/ui/dropzone";
 import { useSession } from "next-auth/react";
+import { nsfwCheckFile } from "@/lib/nsfw-check";
 
 export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
+  const [blockOpen, setBlockOpen] = useState(false);
   const {
     control,
     handleSubmit,
@@ -85,6 +97,36 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
       toast.error("Something went wrong creating the event");
     }
   };
+
+  // NSFW check on file select. Block -> clear file + show dialog. Allow/Review -> accept silently.
+  async function onThumbnailSelected(file: File | null) {
+    if (!file) {
+      setScanDecision(null);
+      setThumbnailFile(null);
+      setValue("thumbnail", null as any, { shouldValidate: true });
+      return;
+    }
+    try {
+      const { decision } = await nsfwCheckFile(file);
+      if (decision === "block") {
+        setScanDecision("block");
+        setThumbnailFile(null);
+        setValue("thumbnail", null as any, { shouldValidate: true });
+        setBlockOpen(true);
+        return;
+      }
+      // allow/review
+      setScanDecision(null);
+      setThumbnailFile(file);
+      setValue("thumbnail", file as any, { shouldValidate: true });
+    } catch (e) {
+      // On scan failure, do not accept the file
+      setScanDecision(null);
+      setThumbnailFile(null);
+      setValue("thumbnail", null as any, { shouldValidate: true });
+      toast.error("Couldn't scan the image. Try another file.");
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -204,25 +246,18 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
             <Controller
               name="thumbnail"
               control={control}
-              render={({ field }) => (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              render={() => (
+                <div
+                  className={
+                    scanDecision === "block"
+                      ? "rounded-md border p-2 border-red-300 bg-red-50/60"
+                      : undefined
+                  }
+                >
                   <Dropzone
                     value={thumbnailFile as File | null}
-                    onFileSelected={(f) => {
-                      setThumbnailFile(f as File | null);
-                      setValue("thumbnail", f as any, { shouldValidate: true });
-                      field.onChange(f as any);
-                    }}
+                    onFileSelected={(f) => onThumbnailSelected(f as File | null)}
                   />
-                  <div className="mt-2">
-                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">
-                      {thumbnailFile
-                        ? thumbnailFile.name
-                        : "Click to upload or drag and drop"}
-                    </p>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
-                  </div>
                 </div>
               )}
             />
@@ -250,6 +285,20 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
               {isSubmitting ? "Creating..." : "Create Event"}
             </Button>
           </DialogFooter>
+          {/* Blocked image modal */}
+          <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Image blocked</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This image appears to contain adult content. Please choose another file.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setBlockOpen(false)}>OK</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </form>
       </DialogContent>
     </Dialog>
