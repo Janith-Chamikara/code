@@ -6,6 +6,7 @@ import { AppointmentStatus, Status } from "./types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth-options";
 import { CreateEventFormData } from "./schema";
+import { CreatePostFormData } from "./schema";
 
 //auth actions
 export const loginAction = async (data: FieldValues) => {
@@ -169,6 +170,36 @@ export async function createEvent(data: CreateEventFormData | FieldValues | Form
       return {
         status: "error",
         message: error.response?.data?.message || "Failed to create event",
+      } as Status;
+    }
+  }
+}
+
+export async function createPost(data: CreatePostFormData | FieldValues | FormData) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+    const response = await axiosPublic.post(`/post/create`, data as any, {
+      headers: {
+        Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
+        Cookie: `refreshToken=${session?.tokenInfo.refreshToken}`,
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      },
+    });
+    return {
+      data: response.data,
+      status: "success",
+      message: response.data.message || "Post created successfully",
+    } as Status;
+  } catch (error) {
+    console.error("Error creating post:", error);
+    if (isAxiosError(error)) {
+      return {
+        status: "error",
+        message: error.response?.data?.message || "Failed to create post",
       } as Status;
     }
   }

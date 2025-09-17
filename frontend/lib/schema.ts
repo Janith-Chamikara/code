@@ -195,6 +195,30 @@ export const createEventSchema = z
     path: ["thumbnail"],
   });
 
+// Post: create schema
+// Minimal fields required by Prisma model: content (required), eventId (required),
+// image can be provided as URL or uploaded file.
+export const createPostSchema = z
+  .object({
+    content: z
+      .string()
+      .min(1, "Say something about your post")
+      .max(2000, "Post content is too long"),
+    eventId: z.string().min(1, "Event is required"),
+    imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
+    imageFile: z
+      .instanceof(File)
+      .refine((f) => f.size <= 5_000_000, "Image must be <= 5MB")
+      .refine((f) => f.type.startsWith("image/"), "File must be an image")
+      .optional(),
+  })
+  .refine((v) => !!v.imageUrl || !!v.imageFile || v.imageUrl === "", {
+    message: "Provide an image (upload or URL) or leave blank",
+    path: ["imageUrl"],
+  });
+
+export type CreatePostFormData = z.infer<typeof createPostSchema>;
+
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;
