@@ -4,9 +4,9 @@
 let modelPromise: Promise<any> | null = null;
 
 async function loadModel() {
-  const tf = await import("@tensorflow/tfjs");       // required on client
+  const tf = await import("@tensorflow/tfjs"); // required on client
   const nsfw = await import("nsfwjs");
-  modelPromise ??= nsfw.load();                      // downloads default hosted model
+  modelPromise ??= nsfw.load(); // downloads default hosted model
   return modelPromise;
 }
 
@@ -36,21 +36,26 @@ export async function nsfwCheckFile(file: File) {
   const img = await dataURLToImage(dataUrl);
 
   const model = await loadModel();
-  const preds: { className: string; probability: number }[] = await model.classify(img);
+  const preds: { className: string; probability: number }[] =
+    await model.classify(img);
 
-  const score = (name: string) => preds.find(p => p.className === name)?.probability ?? 0;
+  const score = (name: string) =>
+    preds.find((p) => p.className === name)?.probability ?? 0;
   const scores = {
     Neutral: score("Neutral"),
     Drawing: score("Drawing"),
-    Sexy:    score("Sexy"),
-    Porn:    score("Porn"),
-    Hentai:  score("Hentai"),
+    Sexy: score("Sexy"),
+    Porn: score("Porn"),
+    Hentai: score("Hentai"),
   };
 
   // 🔧 Policy (tune as you like)
   const decision =
-    scores.Porn >= 0.85 || scores.Hentai >= 0.85 ? "block" :
-    scores.Sexy >= 0.60 ? "review" : "allow";
+    scores.Porn >= 0.85 || scores.Hentai >= 0.85
+      ? "block"
+      : scores.Sexy >= 0.6
+      ? "review"
+      : "allow";
 
   return { decision, scores, preds };
 }
