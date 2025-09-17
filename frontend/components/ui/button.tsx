@@ -20,14 +20,15 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
-        glow: `
-          relative isolate text-white bg-black/60 
-          border border-transparent rounded-md
-          before:content-[''] before:absolute before:-inset-px before:rounded-md
-          before:bg-gradient-to-r before:from-fuchsia-500 before:via-indigo-500 before:to-cyan-500
-          before:[background-size:200%_200%] before:animate-[glow_4s_linear_infinite]
-          before:pointer-events-none before:-z-10
-        `,
+          glow: `
+            relative isolate text-white bg-black/60 rounded-lg 
+            border border-transparent 
+            before:content-[""] before:absolute before:inset-0 before:rounded-lg before:block
+            before:p-[2px] before:bg-gradient-to-r before:bg-[length:200%_200%]
+            before:from-fuchsia-500 before:via-indigo-500 before:to-cyan-500
+            before:animate-[glow_3s_linear_infinite]
+            before:pointer-events-none before:-z-10
+          `,
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
