@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                    String         @id @default(uuid())
+  email                 String         @unique
+  password              String
+  firstName             String?
+  lastName              String?
+  phoneNumber           String?
+  nationalId            String?        @unique
+  dateOfBirth           DateTime?
+  address               String?
+  city                  String?
+  gnDivision            String?
+  divisionalSecretariat String?
+  province              String?
+  postalCode            String?
+  isVerified            Boolean        @default(false)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  Notification          Notification[]
+}
+
+// Notification System
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  officerId String?
+  title     String
+  message   String
+  type      NotificationType
+  channel   NotificationChannel
+  isRead    Boolean             @default(false)
+  createdAt DateTime            @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum NotificationType {
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_REMINDER
+  APPOINTMENT_UPDATE
+  DOCUMENT_STATUS
+  SYSTEM_ALERT
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  IN_APP
+}
