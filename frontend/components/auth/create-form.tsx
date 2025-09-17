@@ -1,71 +1,87 @@
 "use client";
 
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createEventSchema, type CreateEventFormData } from "@/lib/schema";
 import { format } from "date-fns";
 import { createEvent } from "@/lib/actions";
 import { Dropzone } from "@/components/ui/dropzone";
+import { useSession } from "next-auth/react";
 
-// Overlay form to create an Event using shadcn ui + Zod
 export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-
-  const form = useForm<CreateEventFormData>({
-    resolver: zodResolver(createEventSchema),
+  const { data: session } = useSession();
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    setValue,
+  } = useForm<CreateEventFormData>({
+    resolver: zodResolver(createEventSchema) as any,
     defaultValues: {
-      name: "",
+      title: "",
       description: "",
       category: "",
-      thumbnail: "",
       eventDate: undefined as unknown as Date,
-    },
+      thumbnail: undefined as any,
+    } as Partial<CreateEventFormData>,
   });
 
   const onSubmit = async (values: CreateEventFormData) => {
     try {
-      // If a file is provided, build FormData so backend can receive multipart upload
-      const hasFile = (values as any).thumbnailFile instanceof File;
-      let res;
-      if (hasFile) {
-        const fd = new FormData();
-        fd.append("name", values.name);
-        fd.append("description", values.description);
-        fd.append("category", values.category);
-        fd.append("eventDate", values.eventDate.toISOString());
-        fd.append("thumbnail", (values as any).thumbnail || "");
-        fd.append("thumbnailFile", (values as any).thumbnailFile);
-        res = await createEvent(fd as any);
-      } else {
-        const payload = {
-          name: values.name,
-          description: values.description,
-          category: values.category,
-          thumbnail: values.thumbnail || "",
-          eventDate: values.eventDate.toISOString(),
-        } as const;
-        res = await createEvent(payload);
+      if (!session) {
+        toast.error("Cannot find user id");
+        return;
       }
+      if (!thumbnailFile) {
+        toast.error("Thumbnail is required");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("title", values.title);
+      formData.append("adminId", session?.user.id);
+      formData.append("description", values.description);
+      formData.append("category", values.category);
+      formData.append("eventDate", values.eventDate.toISOString());
+      formData.append("thumbnail", thumbnailFile);
+
+      const res = await createEvent(formData as any);
+
       if (res?.status === "success") {
         toast.success(res.message ?? "Event created");
-        form.reset();
+        reset();
+        setThumbnailFile(null);
         setOpen(false);
       } else {
         toast.error(res?.message ?? "Failed to create event");
       }
     } catch (e) {
+      console.error("Error creating event", e);
       toast.error("Something went wrong creating the event");
     }
   };
@@ -75,125 +91,166 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
       <DialogTrigger asChild>
         {trigger ?? <Button>Create event</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create new event</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="name"
+        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Event Name</Label>
+            <Controller
+              name="title"
+              control={control}
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <Input
+                  {...field}
+                  id="title"
+                  placeholder="Enter event name"
+                  className="h-12"
+                />
               )}
             />
-            <FormField
-              control={form.control}
+            {errors.title && (
+              <p className="text-sm text-red-600">{errors.title.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Controller
               name="description"
+              control={control}
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea rows={4} placeholder="Describe your event" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <Textarea
+                  {...field}
+                  id="description"
+                  rows={4}
+                  placeholder="Describe your event"
+                  className="resize-none"
+                />
               )}
             />
-            <FormField
-              control={form.control}
+            {errors.description && (
+              <p className="text-sm text-red-600">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Controller
               name="category"
+              control={control}
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Tech, Music" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <Input
+                  {...field}
+                  id="category"
+                  placeholder="e.g. Tech, Music, Sports"
+                  className="h-12"
+                />
               )}
             />
-            <FormField
-              control={form.control}
-              name="thumbnail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Thumbnail</FormLabel>
-                  <div className="grid gap-2">
-                    <FormControl>
-                      <Input placeholder="https://... (optional if you upload)" {...field} />
-                    </FormControl>
-                    <Controller
-                      control={form.control}
-                      name="thumbnailFile"
-                      render={({ field: fileField }) => (
-                        <Dropzone
-                          value={fileField.value as unknown as File | null}
-                          onFileSelected={(f) => fileField.onChange(f)}
-                        />
-                      )}
-                    />
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
+            {errors.category && (
+              <p className="text-sm text-red-600">{errors.category.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="eventDate">Event Date</Label>
+            <Controller
               name="eventDate"
+              control={control}
               render={({ field }) => (
-                <FormItem className="flex flex-col gap-2">
-                  <FormLabel>Event date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal w-full justify-start",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date < new Date("1900-01-01")}
-                        captionLayout="dropdown"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full h-12 justify-start text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        field.onChange(date ?? undefined);
+                      }}
+                      disabled={(date) => date < new Date("1900-01-01")}
+                      captionLayout="dropdown"
+                    />
+                  </PopoverContent>
+                </Popover>
               )}
             />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Creating..." : "Create event"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            {errors.eventDate && (
+              <p className="text-sm text-red-600">{errors.eventDate.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Upload Thumbnail</Label>
+            <Controller
+              name="thumbnail"
+              control={control}
+              render={({ field }) => (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                  <Dropzone
+                    value={thumbnailFile as File | null}
+                    onFileSelected={(f) => {
+                      setThumbnailFile(f as File | null);
+                      setValue("thumbnail", f as any, { shouldValidate: true });
+                      field.onChange(f as any);
+                    }}
+                  />
+                  <div className="mt-2">
+                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-600">
+                      {thumbnailFile
+                        ? thumbnailFile.name
+                        : "Click to upload or drag and drop"}
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                  </div>
+                </div>
+              )}
+            />
+            {errors.thumbnail && (
+              <p className="text-sm text-red-600">
+                {errors.thumbnail.message as string}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="h-12"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-12 bg-black text-white hover:bg-gray-800"
+            >
+              {isSubmitting ? "Creating..." : "Create Event"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

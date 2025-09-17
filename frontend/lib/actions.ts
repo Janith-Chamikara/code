@@ -92,29 +92,6 @@ export const signUpAction = async (data: FieldValues) => {
   }
 };
 
-export const completeOnboarding = async (userId: string, data: FieldValues) => {
-  try {
-    const response = await axiosPublic.post(
-      `auth/complete-onboarding?id=${userId}`,
-      data
-    );
-    console.log(response.data);
-    return {
-      status: "success",
-      data: response.data.updatedUser,
-      message: response.data.message as string,
-    } as Status;
-  } catch (error) {
-    console.log(error, "ONBORDING ERROR");
-    if (isAxiosError(error)) {
-      return {
-        status: "error",
-        message: error.response?.data.message,
-      } as Status;
-    }
-  }
-};
-
 //notification actions
 export async function getNotifications() {
   try {
@@ -142,14 +119,17 @@ export async function getNotifications() {
 }
 
 // event actions
-export async function createEvent(data: CreateEventFormData | FieldValues | FormData) {
+export async function createEvent(
+  data: CreateEventFormData | FieldValues | FormData
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
 
-    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+    const isFormData =
+      typeof FormData !== "undefined" && data instanceof FormData;
     const response = await axiosPublic.post(`/event/create`, data as any, {
       headers: {
         Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
@@ -164,7 +144,7 @@ export async function createEvent(data: CreateEventFormData | FieldValues | Form
       message: response.data.message || "Event created successfully",
     } as Status;
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("Error creating event:", error.response.data);
     if (isAxiosError(error)) {
       return {
         status: "error",

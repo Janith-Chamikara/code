@@ -19,9 +19,5 @@ export class CreateEventDto {
 
   @IsString()
   @IsNotEmpty()
-  readonly thumbnail: string;
-
-  @IsString()
-  @IsNotEmpty()
   readonly adminId: string;
 }
