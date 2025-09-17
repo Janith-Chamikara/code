@@ -28,17 +28,12 @@ export function SignupForm() {
   });
 
   const router = useRouter();
-  useEffect(() => {
-    const isOnboardingCompleted = localStorage.getItem("isOnboardingCompleted");
-    const isSignUpCompleted = localStorage.getItem("isSignUpCompleted");
-    if (isSignUpCompleted === "TRUE" && isOnboardingCompleted === "FALSE") {
-      router.push("/onboarding");
-    }
-  }, []);
   const onSubmit = async (data: RegisterFormData) => {
     const response = await signUpAction({
       email: data.email,
       password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
     });
     if (response) {
       if (response.status === "success") {
@@ -48,9 +43,7 @@ export function SignupForm() {
           email: data.email,
           password: data.password,
         });
-        localStorage.setItem("isSignUpCompleted", "TRUE");
-        localStorage.setItem("isOnboardingCompleted", "FALSE");
-        router.push("/onboarding");
+        router.push("/");
       } else {
         toast.error(response.message);
       }
@@ -59,6 +52,42 @@ export function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="nic">First Name</Label>
+        <Controller
+          name="firstName"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              id="firstName"
+              placeholder="Janith"
+              className="h-12"
+            />
+          )}
+        />
+        {errors.firstName && (
+          <p className="text-sm text-red-600">{errors.firstName.message}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="nic">Last Name</Label>
+        <Controller
+          name="lastName"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              id="lastName"
+              placeholder="Chamikara"
+              className="h-12"
+            />
+          )}
+        />
+        {errors.lastName && (
+          <p className="text-sm text-red-600">{errors.lastName.message}</p>
+        )}
+      </div>
       <div className="space-y-2">
         <Label htmlFor="nic">Email</Label>
         <Controller

@@ -1,3 +1,5 @@
+import { createRequire } from "module";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -10,8 +12,22 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  serverActions: {
-    bodySizeLimit: "20mb",
+  // Polyfills for browser builds (nsfwjs requires Buffer)
+  webpack: (config, { webpack }) => {
+    const req = createRequire(import.meta.url);
+    config.resolve = config.resolve || {};
+    config.resolve.fallback = {
+      ...(config.resolve?.fallback || {}),
+      buffer: req.resolve("buffer/")
+    };
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new webpack.ProvidePlugin({
+        Buffer: ["buffer", "Buffer"],
+      })
+    );
+
+    return config;
   },
 };
 

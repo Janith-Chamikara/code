@@ -16,7 +16,9 @@ export default function LoginPage() {
                   <h1 className="text-2xl font-semibold text-gray-900 mb-2">
                     Welcome back
                   </h1>
-                  <p className="text-gray-600">Login to your SIGNORA account</p>
+                  <p className="text-gray-600">
+                    Login to your EventBuzz account
+                  </p>
                 </div>
 
                 <LoginForm />
