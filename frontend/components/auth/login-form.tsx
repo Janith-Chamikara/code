@@ -38,7 +38,7 @@ export function LoginForm() {
     } else if (result?.ok) {
       toast.success("Login successful");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/");
       }, 1000);
     }
   };

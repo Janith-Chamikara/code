@@ -7,6 +7,7 @@ import {
   NotificationChannel,
   NotificationType,
 } from 'src/notifications/dto/create-notification.dto';
+import { ReactionType } from '@prisma/client';
 
 @Injectable()
 export class PostService {
@@ -31,18 +32,14 @@ export class PostService {
     );
 
     await this.prismaService.post.update({
-      where: {
-        id: post.id,
-      },
-      data: {
-        imageUrl: uploadResult.public_id,
-      },
+      where: { id: post.id },
+      data: { imageUrl: uploadResult.public_id },
     });
 
     await this.notificationService.create({
       userId: createPostDto.userId,
-      title: `New event has been successfully added`,
-      message: `Thank you for adding a new event. Please check the event details for more information.`,
+      title: `New post has been successfully added`,
+      message: `Thank you for adding a new post.`,
       type: NotificationType.SYSTEM_ALERT,
       channel: NotificationChannel.IN_APP,
     });
@@ -51,15 +48,50 @@ export class PostService {
 
   async getByEventId(eventId: string) {
     const posts = await this.prismaService.post.findMany({
-      where: {
-        eventId: eventId,
-      },
+      where: { eventId },
     });
-
     return posts;
   }
 
   async getAllPosts() {
     return await this.prismaService.post.findMany();
+  }
+
+  // --- Reactions (Upvote / Downvote) ---
+  async upvote(postId: string, userId: string) {
+    return await this.handleReaction(postId, userId, ReactionType.UPVOTE);
+  }
+
+  async downvote(postId: string, userId: string) {
+    return await this.handleReaction(postId, userId, ReactionType.DOWNVOTE);
+  }
+
+  private async handleReaction(
+    postId: string,
+    userId: string,
+    desired: ReactionType,
+  ) {
+    const existing = await this.prismaService.reaction.findFirst({
+      where: { postId, userId },
+    });
+
+    if (existing) {
+      if (existing.type === desired) {
+        await this.prismaService.reaction.delete({
+          where: { id: existing.id },
+        });
+        return { postId, userReaction: null };
+      }
+      await this.prismaService.reaction.update({
+        where: { id: existing.id },
+        data: { type: desired },
+      });
+      return { postId, userReaction: desired };
+    }
+
+    await this.prismaService.reaction.create({
+      data: { postId, userId, type: desired },
+    });
+    return { postId, userReaction: desired };
   }
 }

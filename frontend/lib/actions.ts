@@ -166,6 +166,19 @@ export async function getEvents(limit = 5) {
   }
 }
 
+export async function getPostsByEvent(eventId: string) {
+  try {
+    const res = await axiosPublic.get(
+      `/post/get-by-event-id?eventId=${encodeURIComponent(eventId)}`
+    );
+    if (Array.isArray(res.data)) return res.data;
+    return [] as any[];
+  } catch (e) {
+    console.error("Failed to fetch posts for event", e);
+    return [];
+  }
+}
+
 export async function createPost(
   data: CreatePostFormData | FieldValues | FormData
 ) {
@@ -189,6 +202,7 @@ export async function createPost(
       message: response.data.message || "Post created successfully",
     } as Status;
   } catch (error) {
+    console.log(error);
     console.error("Error creating post:", error);
     if (isAxiosError(error)) {
       return {
@@ -646,5 +660,84 @@ export async function getFeedbacksByAppointmentId(appointmentId: string) {
         message: error.response?.data.message,
       } as Status;
     }
+  }
+}
+
+//vote actions
+export async function upvotePost(postId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const res = await axiosPublic.post(
+      `/post/upvote?postId=${postId}&userId=${session.user.id}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
+          Cookie: `refreshToken=${session?.tokenInfo.refreshToken}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (e) {
+    console.error("Failed to upvote", e);
+    return { error: true };
+  }
+}
+
+export async function downvotePost(postId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const res = await axiosPublic.post(
+      `/post/downvote?postId=${postId}&userId=${session.user.id}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
+          Cookie: `refreshToken=${session?.tokenInfo.refreshToken}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (e) {
+    console.error("Failed to downvote", e);
+    return { error: true };
+  }
+}
+
+//comment actions
+export async function addComment(postId: string, content: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const res = await axiosPublic.post(
+      "/comment/create",
+      {
+        postId,
+        content,
+        userId: session.user.id,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
+          Cookie: `refreshToken=${session?.tokenInfo.refreshToken}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (e) {
+    console.error("Failed to add comment", e);
+    return { error: true };
+  }
+}
+
+export async function getComments(postId: string) {
+  try {
+    const res = await axiosPublic.get(`/comment/by-post?postId=${postId}`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.error("Failed to load comments", e);
+    return [];
   }
 }

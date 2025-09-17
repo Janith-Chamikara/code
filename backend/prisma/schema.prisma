@@ -47,6 +47,8 @@ model Post {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   eventId   String
+  upvotes   Int        @default(0)
+  downvotes Int        @default(0)
   userId    String
   event     Event      @relation(fields: [eventId], references: [id])
   user      User       @relation(fields: [userId], references: [id])
