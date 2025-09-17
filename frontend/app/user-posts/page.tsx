@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreVertical, UserPlus, Camera, Send, Loader2, RefreshCw } from "lucide-react";
+import { ArrowUp, ArrowDown, MessageCircle, MoreVertical, UserPlus, Camera, Send, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Post {
@@ -12,9 +12,10 @@ interface Post {
   timeAgo: string;
   caption: string;
   image?: string;
-  hearts: number;
+  upvotes: number;
+  downvotes: number;
   comments: Comment[];
-  isHearted?: boolean;
+  userVote?: 'up' | 'down' | null;
 }
 
 interface Comment {
@@ -51,7 +52,8 @@ export default function EventWall() {
       timeAgo: "2h",
       caption: "Had an amazing time at the event! 🎉",
       image: "/posts/post1.jpg",
-      hearts: 12,
+      upvotes: 12,
+      downvotes: 2,
       comments: [
         {
           id: 1,
@@ -70,7 +72,7 @@ export default function EventWall() {
           timeAgo: "30m",
         },
       ],
-      isHearted: false,
+      userVote: null,
     },
     {
       id: 2,
@@ -79,9 +81,10 @@ export default function EventWall() {
       userId: 104,
       timeAgo: "5h",
       caption: "Loving the vibes at this event! 😎",
-      hearts: 7,
+      upvotes: 7,
+      downvotes: 1,
       comments: [],
-      isHearted: false,
+      userVote: null,
     },
   ]);
 
@@ -102,17 +105,36 @@ export default function EventWall() {
 
   const [commentInputs, setCommentInputs] = useState<{ [key: number]: string }>({});
 
-  const handleHeart = (postId: number) => {
+  const handleVote = (postId: number, voteType: 'up' | 'down') => {
     setPosts(prev =>
-      prev.map(p =>
-        p.id === postId
-          ? {
-              ...p,
-              hearts: p.isHearted ? p.hearts - 1 : p.hearts + 1,
-              isHearted: !p.isHearted,
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.id !== postId) return p;
+
+        let newUpvotes = p.upvotes;
+        let newDownvotes = p.downvotes;
+        let newUserVote: 'up' | 'down' | null = voteType;
+
+        // Handle previous vote removal
+        if (p.userVote === 'up') newUpvotes--;
+        if (p.userVote === 'down') newDownvotes--;
+
+        // Handle new vote or toggle off
+        if (p.userVote === voteType) {
+          // Toggle off if clicking same vote
+          newUserVote = null;
+        } else {
+          // Add new vote
+          if (voteType === 'up') newUpvotes++;
+          if (voteType === 'down') newDownvotes++;
+        }
+
+        return {
+          ...p,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          userVote: newUserVote,
+        };
+      })
     );
   };
 
@@ -147,11 +169,10 @@ export default function EventWall() {
     }
   };
 
+  const getNetScore = (post: Post) => post.upvotes - post.downvotes;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      {/* Header */}
-  
-
       {/* Posts */}
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
         {posts.map(post => (
@@ -174,17 +195,36 @@ export default function EventWall() {
 
             {/* Engagement */}
             <div className="flex items-center gap-6 mb-4">
-              <button onClick={() => handleHeart(post.id)} className={`flex items-center gap-2 ${post.isHearted ? "text-red-500" : "text-gray-600"}`}>
-                <Heart className="w-6 h-6" />
-                {post.hearts}
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handleVote(post.id, 'up')} 
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full transition-colors ${
+                    post.userVote === 'up' ? "text-green-600 bg-green-100" : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+                  }`}
+                >
+                  <ArrowUp className="w-5 h-5" />
+                  <span className="text-sm font-medium">{post.upvotes}</span>
+                </button>
+                <button 
+                  onClick={() => handleVote(post.id, 'down')} 
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full transition-colors ${
+                    post.userVote === 'down' ? "text-red-600 bg-red-100" : "text-gray-600 hover:text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  <ArrowDown className="w-5 h-5" />
+                  <span className="text-sm font-medium">{post.downvotes}</span>
+                </button>
+                <div className={`text-sm font-bold px-2 py-1 rounded-full ${
+                  getNetScore(post) > 0 ? "text-green-700 bg-green-100" : 
+                  getNetScore(post) < 0 ? "text-red-700 bg-red-100" : 
+                  "text-gray-700 bg-gray-100"
+                }`}>
+                  {getNetScore(post) > 0 ? '+' : ''}{getNetScore(post)}
+                </div>
+              </div>
               <div className="flex items-center gap-2 text-gray-600">
                 <MessageCircle className="w-6 h-6" />
                 {post.comments.length}
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Share2 className="w-6 h-6" />
-                Share
               </div>
             </div>
 
