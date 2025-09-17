@@ -47,6 +47,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [scanDecision, setScanDecision] = useState<"allow" | "review" | "block" | null>(null);
   const [blockOpen, setBlockOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const {
     control,
     handleSubmit,
@@ -107,6 +108,7 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
       return;
     }
     try {
+      setScanning(true);
       const { decision } = await nsfwCheckFile(file);
       if (decision === "block") {
         setScanDecision("block");
@@ -125,6 +127,8 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
       setThumbnailFile(null);
       setValue("thumbnail", null as any, { shouldValidate: true });
       toast.error("Couldn't scan the image. Try another file.");
+    } finally {
+      setScanning(false);
     }
   }
 
@@ -247,17 +251,25 @@ export function CreateEventDialog({ trigger }: { trigger?: React.ReactNode }) {
               name="thumbnail"
               control={control}
               render={() => (
-                <div
-                  className={
-                    scanDecision === "block"
-                      ? "rounded-md border p-2 border-red-300 bg-red-50/60"
-                      : undefined
-                  }
-                >
-                  <Dropzone
-                    value={thumbnailFile as File | null}
-                    onFileSelected={(f) => onThumbnailSelected(f as File | null)}
-                  />
+                <div className={cn(
+                  scanDecision === "block" && "rounded-md border p-2 border-red-300 bg-red-50/60"
+                )}>
+                  <div className="relative">
+                    {scanning && (
+                      <div className="absolute inset-0 z-10 grid place-items-center rounded-md bg-background/70">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "-0.2s" }} />
+                          <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "-0.1s" }} />
+                          <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" />
+                        </div>
+                      </div>
+                    )}
+                    <Dropzone
+                      className={cn(scanning && "opacity-50 pointer-events-none select-none")}
+                      value={thumbnailFile as File | null}
+                      onFileSelected={(f) => onThumbnailSelected(f as File | null)}
+                    />
+                  </div>
                 </div>
               )}
             />
