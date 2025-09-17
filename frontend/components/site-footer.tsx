@@ -10,13 +10,14 @@ export function SiteFooter() {
             <Logo />
             <div className="max-w-md">
               <h3 className="font-serif font-semibold text-lg mb-2">
-                Signora: Secure Digital Signatures for Sri Lanka
+                EventBuzz: Your Interactive Event Wall
               </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Signora is your trusted platform for secure and efficient
-                signature-taking in Sri Lanka. Whether it's for legal documents,
-                contracts, or approvals, Signora ensures a seamless, digital
-                signing experience.
+                EventBuzz is your go-to platform for creating an engaging and
+                dynamic event experience. Share updates, photos, and polls in
+                real-time, and interact with other attendees. Perfect for
+                hackathons, campus events, and corporate gatherings, EventBuzz
+                keeps you connected and informed throughout.
               </p>
             </div>
           </div>
