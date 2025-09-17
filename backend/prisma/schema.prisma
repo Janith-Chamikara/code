@@ -9,27 +9,75 @@ datasource db {
 
 // User Management
 model User {
-  id                    String         @id @default(uuid())
-  email                 String         @unique
-  password              String
-  firstName             String?
-  lastName              String?
-  phoneNumber           String?
-  nationalId            String?        @unique
-  dateOfBirth           DateTime?
-  address               String?
-  city                  String?
-  gnDivision            String?
-  divisionalSecretariat String?
-  province              String?
-  postalCode            String?
-  isVerified            Boolean        @default(false)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  Notification          Notification[]
+  id           String         @id @default(uuid())
+  firstName    String
+  lastName     String?
+  workplace    String?        @default("None")
+  job          String?        @default("None")
+  email        String         @unique
+  password     String
+  posts        Post[]
+  comments     Comment[]
+  reactions    Reaction[]
+  Notification Notification[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Event        Event[]
 }
 
-// Notification System
+model Event {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  category    String
+  eventDate   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  adminId     String
+  admin       User     @relation(fields: [adminId], references: [id])
+  posts       Post[]
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  content   String
+  imageUrl  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  eventId   String
+  userId    String
+  event     Event      @relation(fields: [eventId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+  comments  Comment[]
+  reactions Reaction[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    String
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Reaction {
+  id        String       @id @default(uuid())
+  type      ReactionType
+  createdAt DateTime     @default(now())
+  postId    String
+  userId    String
+  post      Post         @relation(fields: [postId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+}
+
+enum ReactionType {
+  UPVOTE
+  DOWNVOTE
+}
+
 model Notification {
   id        String              @id @default(uuid())
   userId    String
