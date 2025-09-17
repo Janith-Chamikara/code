@@ -5,6 +5,7 @@ import { isAxiosError } from "axios";
 import { AppointmentStatus, Status } from "./types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth-options";
+import { CreateEventFormData } from "./schema";
 
 //auth actions
 export const loginAction = async (data: FieldValues) => {
@@ -137,6 +138,39 @@ export async function getNotifications() {
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return { notifications: [] };
+  }
+}
+
+// event actions
+export async function createEvent(data: CreateEventFormData | FieldValues | FormData) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+    const response = await axiosPublic.post(`/event/create`, data as any, {
+      headers: {
+        Authorization: `Bearer ${session?.tokenInfo.accessToken}`,
+        Cookie: `refreshToken=${session?.tokenInfo.refreshToken}`,
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      },
+    });
+
+    return {
+      data: response.data,
+      status: "success",
+      message: response.data.message || "Event created successfully",
+    } as Status;
+  } catch (error) {
+    console.error("Error creating event:", error);
+    if (isAxiosError(error)) {
+      return {
+        status: "error",
+        message: error.response?.data?.message || "Failed to create event",
+      } as Status;
+    }
   }
 }
 export async function markNotificationAsRead(id: string) {
