@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CreateEventDialog } from "@/components/auth/create-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,11 +39,13 @@ export default function HomePage() {
                 for your audience. Perfect for hackathons, campus events, and meetups.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/signup">
-                  <Button size="lg" className="gap-2">
-                    Start an event <Sparkles className="size-5" />
-                  </Button>
-                </Link>
+                <CreateEventDialog
+                  trigger={
+                    <Button size="lg" className="gap-2">
+                      Start an event <Sparkles className="size-5" />
+                    </Button>
+                  }
+                />
                 <Link href="#events">
                   <Button size="lg" variant="outline" className="gap-2">
                     View public wall <ArrowRight className="size-5" />

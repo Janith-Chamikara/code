@@ -164,6 +164,38 @@ export const feedbackSchema = z.object({
   isAnonymous: z.boolean().optional(),
 });
 
+// Event: create schema
+// Matches Prisma model from screenshot: name, description, category, thumbnail, eventDate
+// We collect eventDate as a Date in the form and convert to string when submitting.
+export const createEventSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, "Event name must be at least 2 characters")
+      .max(100, "Event name must be less than 100 characters"),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(2000, "Description must be less than 2000 characters"),
+    category: z.string().min(1, "Category is required"),
+    // Either a URL or a file can be provided. We'll refine below to enforce one.
+    thumbnail: z.string().url("Please provide a valid image URL").optional(),
+    thumbnailFile: z
+      .instanceof(File)
+      .refine((f) => f.size <= 5_000_000, "Image must be <= 5MB")
+      .refine((f) => f.type.startsWith("image/"), "File must be an image")
+      .optional(),
+    eventDate: z.date({
+      required_error: "Event date is required",
+      invalid_type_error: "Please select a valid date",
+    }),
+  })
+  .refine((v) => !!v.thumbnail || !!v.thumbnailFile, {
+    message: "Provide an image (upload or URL)",
+    path: ["thumbnail"],
+  });
+
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;
+export type CreateEventFormData = z.infer<typeof createEventSchema>;
