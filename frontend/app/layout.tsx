@@ -22,9 +22,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Signora - Secure Digital Signatures for Sri Lanka",
+  title: "EventBuzz - Social Event Wall ",
   description:
-    "Your trusted platform for secure and efficient signature-taking in Sri Lanka. Whether it's for legal documents, contracts, or approvals, Signora ensures a seamless, digital signing experience.",
+    "EventBuzz is your go-to platform for engaging and interactive event experiences. Post updates, share photos, participate in polls, and interact with fellow attendees in real-time. Whether it's a hackathon, campus event, or corporate gathering, stay connected and in the loop with EventBuzz.",
 };
 
 export default function RootLayout({
