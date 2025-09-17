@@ -1,21 +1,8 @@
 import { z } from "zod";
-import {
-  bookingSchema,
-  createServiceSchema,
-  departmentSchema,
-  feedbackSchema,
-  loginSchema,
-  onboardingSchema,
-  registerSchema,
-} from "./schema";
+import { loginSchema, registerSchema } from "./schema";
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
-export type OnboardingFormData = z.infer<typeof onboardingSchema>;
-export type BookingFormData = z.infer<typeof bookingSchema>;
-export type DepartmentFormData = z.infer<typeof departmentSchema>;
-export type CreateServiceFormData = z.infer<typeof createServiceSchema>;
-export type FeedbackFormData = z.infer<typeof feedbackSchema>;
 
 export type Status = {
   status: "default" | "success" | "error";
@@ -162,4 +149,17 @@ export type Feedback = {
   isAnonymous: boolean;
   createdAt: string;
   user: User;
+};
+
+export type EventType = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  postCount: number;
+  thumbnail: string;
+  eventDate: string;
+  createdAt: Date;
+  updatedAt: Date;
+  adminId: string;
 };

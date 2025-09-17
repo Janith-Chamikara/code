@@ -1,97 +1,91 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Calendar, Plus } from "lucide-react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { axiosPublic } from "@/lib/axios";
+import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import DetailedEventCard, { type EventType } from "@/components/detailed-event-card";
 import Link from "next/link";
-
-// Stable keys for skeleton items to satisfy lint rule against index keys
-const SKELETON_KEYS: readonly string[] = [
-  "s1",
-  "s2",
-  "s3",
-  "s4",
-  "s5",
-  "s6",
-];
-
-const EventCardSkeleton = () => (
-  <Card className="overflow-hidden">
-    <div className="h-48 bg-gray-300 animate-pulse" />
-    <CardHeader>
-      <div className="h-6 bg-gray-300 rounded animate-pulse mb-2" />
-      <div className="h-4 bg-gray-300 rounded animate-pulse" />
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-300 rounded animate-pulse" />
-        <div className="h-4 bg-gray-300 rounded animate-pulse" />
-        <div className="h-4 bg-gray-300 rounded animate-pulse" />
-      </div>
-    </CardContent>
-  </Card>
-);
+import { Plus, Sparkles } from "lucide-react";
+import { CreateEventDialog } from "@/components/auth/create-event-form";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<EventType[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const mockEvents: EventType[] = [
-      { id: 1, name: "Tech Hackathon 2025", description: "48-hour buildathon.", date: "2025-09-28", time: "09:00", category: "Technology", organizer: "Tech Club", location: "Main Hall" },
-      { id: 2, name: "Campus Food Festival", description: "Cuisines from around the world.", date: "2025-10-10", time: "11:00", category: "Food & Culture", organizer: "SAB", location: "Campus Plaza" },
-      { id: 3, name: "Career Fair", description: "Meet top employers.", date: "2025-10-20", time: "10:00", category: "Career", organizer: "Career Center", location: "Student Center" },
-    ];
-    setEvents(mockEvents);
-    setLoading(false);
-  }, []);
+  const {
+    data: events = [],
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["events", "list", "all"],
+    queryFn: async () => {
+      const res = await axiosPublic.get("/event/get-all");
+      if (Array.isArray(res.data)) return res.data;
+      return [] as any[];
+    },
+    staleTime: 60_000,
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+    <div className="min-h-screen bg-background py-10">
+      <div className="container max-w-7xl mx-auto px-4 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Events</h1>
-            <p className="text-gray-600 mt-1">Discover and join exciting events</p>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+              Events
+            </h1>
+            <p className="mt-2 text-muted-foreground max-w-xl">
+              Browse recent and upcoming events. Click an event to view details.
+            </p>
           </div>
-          <Link href="/events/create">
-            <Button className="bg-gray-800 hover:bg-gray-900 text-white flex items-center gap-2 border border-gray-700">
-              <Plus className="w-4 h-4" /> Create Event
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              {isFetching ? "Refreshing..." : "Refresh"}
             </Button>
-          </Link>
-        </div>
-
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SKELETON_KEYS.map((key) => (
-              <EventCardSkeleton key={`skeleton-${key}`} />
-            ))}
-          </div>
-        )}
-
-        {!loading && events.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <Link key={String(event.id)} href={`/events/${encodeURIComponent(String(event.id))}`}>
-                <DetailedEventCard event={event} />
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {!loading && events.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4"><Calendar className="w-16 h-16 mx-auto" /></div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No events available</h3>
-            <p className="text-gray-500 mb-4">Be the first to create an event for your community!</p>
-            <Link href="/events/create">
-              <Button className="bg-gray-800 hover:bg-gray-900 text-white border border-gray-700">
-                <Plus className="w-4 h-4 mr-2" /> Create First Event
-              </Button>
+            <CreateEventDialog
+              trigger={
+                <Button size="lg" className="gap-2">
+                  Start an event <Sparkles className="size-5" />
+                </Button>
+              }
+            />
+            <Link href="/">
+              <Button variant="secondary">Home</Button>
             </Link>
           </div>
+        </div>
+
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Loading events...</div>
         )}
+        {isError && (
+          <div className="text-sm text-red-600">Failed to load events.</div>
+        )}
+        {!isLoading && !isError && events.length === 0 && (
+          <div className="text-sm text-muted-foreground">
+            No events yet. Create the first one!
+          </div>
+        )}
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {events.map((ev: any) => (
+            <EventCard
+              key={ev.id}
+              id={ev.id}
+              name={ev.title}
+              description={ev.description}
+              category={ev.category}
+              postCount={ev.postCount ?? 0}
+              thumbnail={ev.thumbnail}
+              eventDate={ev.eventDate}
+              live={new Date(ev.eventDate) >= new Date()}
+              href={`/events/${ev.id}`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

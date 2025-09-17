@@ -155,6 +155,17 @@ export async function createEvent(
   }
 }
 
+export async function getEvents(limit = 5) {
+  try {
+    const response = await axiosPublic.get(`/event/get-all`);
+    const events = Array.isArray(response.data) ? response.data : [];
+    return events.slice(0, limit);
+  } catch (e) {
+    console.error("Failed to fetch events", e);
+    return [];
+  }
+}
+
 export async function createPost(
   data: CreatePostFormData | FieldValues | FormData
 ) {
