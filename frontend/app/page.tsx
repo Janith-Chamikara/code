@@ -19,6 +19,7 @@ import {
   Sparkles,
   BarChart3,
 } from "lucide-react";
+import { CreatePostDialog } from "@/components/auth/create-post-form";
 
 export default function HomePage() {
   return (
