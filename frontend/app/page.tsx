@@ -21,33 +21,6 @@ import {
 export default function HomePage() {
   return (
     <main className="flex-1">
-      {/* Inline minimal header (avoid site-level components) */}
-      <header className="w-full sticky top-0 z-20 border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="size-8 rounded-md bg-black text-white grid place-items-center">
-              EB
-            </div>
-            <span className="font-semibold">EventBuzz</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground">Features</a>
-            <a href="#events" className="hover:text-foreground">Events</a>
-            <a href="#how" className="hover:text-foreground">How it works</a>
-            <a href="#realtime" className="hover:text-foreground">Realtime</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Log in</Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm" className="gap-1">
-                Create event <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="relative">
