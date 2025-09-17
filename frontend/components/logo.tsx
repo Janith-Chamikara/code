@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import logo from "@/public/images/logo.png";
+import logo from "@/public/images/EventBuzz.png";
 import { useRouter } from "next/navigation";
 
 export default function Logo() {
@@ -9,7 +9,7 @@ export default function Logo() {
     <Image
       onClick={() => router.push("/")}
       src={logo}
-      className="hover:cursor-pointer w-[104px] h-[45px] md:w-[124px] md:h-[45px]"
+      className="hover:cursor-pointer w-[104px] h-auto md:w-[124px] md:h-auto"
       alt="Logo"
     />
   );

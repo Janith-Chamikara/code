@@ -40,7 +40,7 @@ export default function HomePage() {
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/signup">
-                  <Button size="lg" className="gap-2">
+                  <Button variant="outline" size="lg" className="gap-2">
                     Start an event <Sparkles className="size-5" />
                   </Button>
                 </Link>
@@ -228,7 +228,7 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+              <Button size="lg" variant="default" className="border-white/30 text-white hover:bg-white/10">
                 I already have an account
               </Button>
             </Link>
